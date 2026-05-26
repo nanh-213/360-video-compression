@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Viewport Adaptive 360° System</title>
+    <style>
+        body { margin: 0; overflow: hidden; background-color: #0d0d0d; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: white; }
+        
+        #upload-lobby { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; background: #1a1a1a; z-index: 999; display: flex; justify-content: center; align-items: center; }
+        .box { background: #262626; padding: 40px; border-radius: 12px; border: 1px solid #00ff88; text-align: center; box-shadow: 0 4px 20px rgba(0,255,136,0.2); }
+        button { background: #00ff88; color: black; border: none; padding: 12px 24px; font-weight: bold; border-radius: 6px; cursor: pointer; margin-top: 20px; }
+        #loading { display: none; margin-top: 20px; color: #00ff88; font-style: italic; }
+
+        #dashboard { position: absolute; top: 20px; left: 20px; background: rgba(0,0,0,0.85); padding: 20px; border-radius: 8px; border: 1px solid #444; width: 320px; z-index: 10; pointer-events: auto; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; }
+        th, td { border: 1px solid #555; padding: 6px; text-align: left; }
+        th { background: #333; color: #00ff88; }
+        
+        #app-container { display: none; }
+        #canvas-container { width: 100vw; height: 100vh; }
+    </style>
+</head>
+<body>
+
+    <div id="upload-lobby">
+        <div class="box">
+            <h2>HỆ THỐNG TRUYỀN TẢI THÍCH NGHI VIDEO 360°</h2>
+            <p>Xử lý nén dựa trên bản đồ độ méo hình học (Distortion Map)</p>
+            <input type="file" id="video-input" accept="video/mp4" /><br>
+            <button onclick="startSystem()">KHỞI CHẠY HỆ THỐNG LIVE DEMO</button>
+            <div id="loading">⚡ Đang phân tích Distortion Map & Thực hiện nén song song... Vui lòng đợi!</div>
+        </div>
+    </div>
+
+    <div id="app-container">
+        <div id="dashboard">
+            <h3>📊 THÔNG SỐ ĐO ĐẠC HỆ THỐNG</h3>
+            <div>Mảnh đang ở Viewport (HIGH): <span id="active-tile" style="color:#00ff88; font-weight:bold;">-</span></div>
+            <hr style="border: 0.5px solid #444; margin: 10px 0;">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Tiêu chí</th>
+                        <th>Bản HIGH (-0.5)</th>
+                        <th>Bản LOW (-0.1)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td>Dung lượng</td><td id="m-h-size">-</td><td id="m-l-size">-</td></tr>
+                    <tr><td>Bitrate</td><td id="m-h-bitrate">-</td><td id="m-l-bitrate">-</td></tr>
+                    <tr><td>PSNR</td><td id="m-h-psnr" style="color:#00ff88;">-</td><td id="m-l-psnr" style="color:#ff4444;">-</td></tr>
+                    <tr><td>Thời gian nén</td><td id="m-h-time">-</td><td id="m-l-time">-</td></tr>
+                </tbody>
+            </table>
+            <p style="font-size:11px; color:#aaa; margin-top:10px; margin-bottom: 5px;">* Video gốc: <span id="m-o-size">-</span> (<span id="m-o-bitrate">-</span>)</p>
+            
+            <div style="margin-top: 15px; border-top: 1px solid #444; padding-top: 15px; text-align: center;">
+                <h4 style="margin: 0 0 10px 0; color: #00ff88; font-size: 13px;">🗺️ BẢN ĐỒ ĐỘ MÉO (HEATMAP)</h4>
+                <img id="distortion-map-img" src="" alt="Distortion Map" style="width: 100%; border-radius: 4px; border: 1px solid #555; display: none;" />
+            </div>
+        </div>
+        <div id="canvas-container"></div>
+    </div>
+
+    <video id="video-high" loop muted crossorigin="anonymous" playsinline style="display:none"></video>
+    <video id="video-low" loop muted crossorigin="anonymous" playsinline style="display:none"></video>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        function startSystem() {
+            const fileInput = document.getElementById('video-input');
+            if (fileInput.files.length === 0) {
+                alert("Bạn ơi, hãy chọn một video 360° đầu vào đã nhé!");
+                return;
+            }
+
+            document.getElementById('loading').style.display = 'block';
+            const formData = new FormData();
+            formData.append('video', fileInput.files[0]);
+
+            fetch('/process', { method: 'POST', body: formData })
+            .then(res => res.json())
+            .then(data => {
+                if (data.error) throw new Error(data.error);
+
+                document.getElementById('m-o-size').innerText = data.metrics.original_size;
+                document.getElementById('m-o-bitrate').innerText = data.metrics.original_bitrate;
+                document.getElementById('m-h-size').innerText = data.metrics.high_size;
+                document.getElementById('m-l-size').innerText = data.metrics.low_size;
+                document.getElementById('m-h-bitrate').innerText = data.metrics.high_bitrate;
+                document.getElementById('m-l-bitrate').innerText = data.metrics.low_bitrate;
+                document.getElementById('m-h-psnr').innerText = data.metrics.high_psnr;
+                document.getElementById('m-l-psnr').innerText = data.metrics.low_psnr;
+                document.getElementById('m-h-time').innerText = data.metrics.high_time;
+                document.getElementById('m-l-time').innerText = data.metrics.low_time;
+
+                // Load Distortion Map Image
+                if (data.distortion_map_url) {
+                    const mapImg = document.getElementById('distortion-map-img');
+                    mapImg.src = data.distortion_map_url + "?t=" + new Date().getTime();
+                    mapImg.style.display = 'block';
+                }
+
+                const vHigh = document.getElementById('video-high');
+                const vLow = document.getElementById('video-low');
+                const t = new Date().getTime();
+                vHigh.src = data.high_url + "?t=" + t;
+                vLow.src = data.low_url + "?t=" + t;
+
+                document.getElementById('upload-lobby').style.display = 'none';
+                document.getElementById('app-container').style.display = 'block';
+
+                vHigh.play();
+                vLow.play();
+                initThreeJS(); 
+            })
+            .catch(err => {
+                alert("Gặp lỗi xử lý: " + err.message);
+                document.getElementById('loading').style.display = 'none';
+            });
+        }
+
+        let container, scene, camera, renderer, videoHigh, videoLow;
+        let tiles = []; 
+        const rows = 4, cols = 4, sphereRadius = 500;
+        let isUserInteracting = false, lon = 0, lat = 0;
+        let onPointerDownLon = 0, onPointerDownLat = 0, onPointerDownPointerX = 0, onPointerDownPointerY = 0;
+        const cameraTarget = new THREE.Vector3(), raycaster = new THREE.Raycaster();
+
+        function initThreeJS() {
+            container = document.getElementById('canvas-container');
+            videoHigh = document.getElementById('video-high');
+            videoLow = document.getElementById('video-low');
+
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 1100);
+            camera.position.set(0, 0, 0);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setPixelRatio(window.devicePixelRatio);
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            container.appendChild(renderer.domElement);
+
+            const texHighBase = new THREE.VideoTexture(videoHigh);
+            const texLowBase = new THREE.VideoTexture(videoLow);
+            texHighBase.minFilter = THREE.LinearFilter;
+            texLowBase.minFilter = THREE.LinearFilter;
+
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < cols; c++) {
+                    const phiStart = (c / cols) * Math.PI * 2;
+                    const phiLength = (1 / cols) * Math.PI * 2;
+                    const thetaStart = (r / rows) * Math.PI;
+                    const thetaLength = (1 / rows) * Math.PI;
+
+                    const geometry = new THREE.SphereGeometry(sphereRadius, 32, 32, phiStart, phiLength, thetaStart, thetaLength);
+                    const tHigh = texHighBase.clone();
+                    const tLow = texLowBase.clone();
+
+                    tHigh.repeat.set(1 / cols, 1 / rows);
+                    tLow.repeat.set(1 / cols, 1 / rows);
+
+                    const uOffset = c / cols;
+                    const vOffset = (rows - 1 - r) / rows; 
+                    tHigh.offset.set(uOffset, vOffset);
+                    tLow.offset.set(uOffset, vOffset);
+
+                    const material = new THREE.MeshBasicMaterial({ map: tLow, side: THREE.BackSide });
+                    const mesh = new THREE.Mesh(geometry, material);
+                    
+                    mesh.userData = { id: `Hàng ${r + 1} - Cột ${c + 1}`, tHigh: tHigh, tLow: tLow };
+                    scene.add(mesh);
+                    tiles.push(mesh);
+
+                    const edges = new THREE.EdgesGeometry(geometry, 30);
+                    const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0x333333, linewidth: 2 }));
+                    scene.add(line);
+                    mesh.userData.borderLine = line; 
+                }
+            }
+
+            document.addEventListener('pointerdown', onPointerDown);
+            document.addEventListener('pointermove', onPointerMove);
+            document.addEventListener('pointerup', onPointerUp);
+            window.addEventListener('resize', onWindowResize);
+            animate();
+        }
+
+        function onPointerDown(event) {
+            if (event.target.tagName === 'INPUT') return; 
+            isUserInteracting = true;
+            onPointerDownPointerX = event.clientX;
+            onPointerDownPointerY = event.clientY;
+            onPointerDownLon = lon;
+            onPointerDownLat = lat;
+        }
+
+        function onPointerMove(event) {
+            if (isUserInteracting === true) {
+                lon = (onPointerDownPointerX - event.clientX) * 0.15 + onPointerDownLon;
+                lat = (event.clientY - onPointerDownPointerY) * 0.15 + onPointerDownLat;
+            }
+        }
+        function onPointerUp() { isUserInteracting = false; }
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+        function animate() { requestAnimationFrame(animate); update(); }
+
+        function update() {
+            if (Math.abs(videoHigh.currentTime - videoLow.currentTime) > 0.1) {
+                videoLow.currentTime = videoHigh.currentTime;
+            }
+
+            lat = Math.max(-85, Math.min(85, lat)); 
+            const phi = THREE.MathUtils.degToRad(90 - lat);
+            const theta = THREE.MathUtils.degToRad(lon);
+
+            cameraTarget.x = Math.sin(phi) * Math.sin(theta);
+            cameraTarget.y = Math.cos(phi);
+            cameraTarget.z = Math.sin(phi) * Math.cos(theta);
+            camera.lookAt(cameraTarget);
+
+            tiles.forEach(tile => {
+                tile.material.map = tile.userData.tLow;
+                tile.userData.borderLine.material.color.setHex(0x333333); 
+            });
+
+            const scanPoints = [
+                new THREE.Vector2(0, 0),       
+                new THREE.Vector2(-0.6, 0.6),   
+                new THREE.Vector2(0.6, 0.6),    
+                new THREE.Vector2(-0.6, -0.6),  
+                new THREE.Vector2(0.6, -0.6)    
+            ];
+            let activeTileNames = [];
+
+            scanPoints.forEach(point => {
+                raycaster.setFromCamera(point, camera);
+                const intersects = raycaster.intersectObjects(tiles);
+                if (intersects.length > 0) {
+                    const touchedTile = intersects[0].object;
+                    touchedTile.material.map = touchedTile.userData.tHigh;
+                    touchedTile.userData.borderLine.material.color.setHex(0x00ff88); 
+                    if (!activeTileNames.includes(touchedTile.userData.id)) {
+                        activeTileNames.push(touchedTile.userData.id);
+                    }
+                }
+            });
+
+            document.getElementById('active-tile').innerText = activeTileNames.length > 0 ? activeTileNames.join(', ') : '-';
+            renderer.render(scene, camera);
+        }
+    </script>
+</body>
+</html>
