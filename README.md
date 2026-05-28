@@ -45,31 +45,33 @@ pip install -r requirements.txt
 
 ## How to Run the Code
 
-1. **Clone the repository** to your local machine:
+1. Clone the repository to your local machine:
 ```bash
 git clone <your-github-repo-url>
 cd <repository-folder>
 
 ```
 
+2. Install the required Python packages::
+```bash
+pip install -r requirements.txt
+```
 
-2. **Start the Flask Server** by running the backend script:
+3. Start the Flask Server by running the backend script:
 ```bash
 python app.py
 
 ```
 
-
-3. **Access the Web Interface**:
+3. Access the Web Interface:
 Open your web browser and navigate to:
 ```text
 [http://127.0.0.1:5000](http://127.0.0.1:5000)
 
 ```
 
-
-4. **Run the Live Demo**:
-Upload any 360° panorama video (`.mp4` format) through the UI and click the start button. The system will process the Distortion Map, encode the streams, and initialize the 3D viewport environment.
+4. Run the Live Demo:
+Upload any 360° video (`.mp4` format) through the UI and click the start button. The system will process the Distortion Map, encode the streams, and initialize the 3D viewport environment.
 
 ---
 
