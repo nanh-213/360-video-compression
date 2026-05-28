@@ -17,10 +17,11 @@ Instead of implementing a complex network transmission pipeline, the system gene
 
 ## Project Structure
 ```text
-├── app.py                  # Backend Flask Server (handles FFmpeg encoding & math algorithms)
+├── app.py                  # Backend Flask Server (handles FFmpeg encoding, video processing, and distortion map calculations)
 ├── templates/
-│   └── index.html          # Frontend UI, Three.js 3D rendering, and Dashboard logic
-├── README.md               # Project documentation
+│   └── index.html          # Frontend UI, Three.js 3D rendering, viewport adaptive logic, and dashboard metrics display
+├── README.md               # Project documentation and usage guide
+├── requirements.txt        # Python packages required to run the project
 
 ```
 
