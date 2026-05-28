@@ -32,12 +32,11 @@ Instead of implementing a complex network transmission pipeline, the system gene
 
 To run this project locally, ensure you have the following installed:
 
-1. **Python 3.x**
-2. **FFmpeg**: Must be installed and added to your system's Environment Variables (PATH).
-3. **Python Packages**:
+1. Python 3.x
+2. FFmpeg: Must be installed and added to your system's Environment Variables (PATH).
+3. Python Packages:
 ```bash
-pip install flask matplotlib numpy
-
+pip install -r requirements.txt
 ```
 
 
