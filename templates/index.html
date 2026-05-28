@@ -4,13 +4,16 @@
     <meta charset="UTF-8">
     <title>Viewport Adaptive 360° System</title>
     <style>
+        /* css (trang trí giao diện) */
         body { margin: 0; overflow: hidden; background-color: #0d0d0d; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: white; }
-        
+
+        /* giao diện sảnh chờ (nơi người dùng upload ảnh) */
         #upload-lobby { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; background: #1a1a1a; z-index: 999; display: flex; justify-content: center; align-items: center; }
         .box { background: #262626; padding: 40px; border-radius: 12px; border: 1px solid #00ff88; text-align: center; box-shadow: 0 4px 20px rgba(0,255,136,0.2); }
         button { background: #00ff88; color: black; border: none; padding: 12px 24px; font-weight: bold; border-radius: 6px; cursor: pointer; margin-top: 20px; }
         #loading { display: none; margin-top: 20px; color: #00ff88; font-style: italic; }
 
+        /* giao diện dashboard (hiển thị các thông số) */
         #dashboard { position: absolute; top: 20px; left: 20px; background: rgba(0,0,0,0.85); padding: 20px; border-radius: 8px; border: 1px solid #444; width: 320px; z-index: 10; pointer-events: auto; }
         table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; }
         th, td { border: 1px solid #555; padding: 6px; text-align: left; }
@@ -22,6 +25,7 @@
 </head>
 <body>
 
+    <!-- UI cho upload ảnh -->
     <div id="upload-lobby">
         <div class="box">
             <h2>360° VIDEO STREAMING SYSTEM</h2>
@@ -32,11 +36,14 @@
         </div>
     </div>
 
+    <!-- UI cho dashboard -->
     <div id="app-container">
         <div id="dashboard">
             <h3>📊 SYSTEM METRICS</h3>
             <div>Tiles currently in Viewport (HIGH): <span id="active-tile" style="color:#00ff88; font-weight:bold;">-</span></div>
             <hr style="border: 0.5px solid #444; margin: 10px 0;">
+            
+            <!-- bảng so sánh video high với video low -->
             <table>
                 <thead>
                     <tr>
@@ -55,7 +62,8 @@
                 </tbody>
             </table>
             <p style="font-size:11px; color:#aaa; margin-top:10px; margin-bottom: 5px;">* Original Video: <span id="m-o-size">-</span> (<span id="m-o-bitrate">-</span>)</p>
-            
+
+            <!-- ảnh distortion map -->
             <div style="margin-top: 15px; border-top: 1px solid #444; padding-top: 15px; text-align: center;">
                 <h4 style="margin: 0 0 10px 0; color: #00ff88; font-size: 13px;">DISTORTION MAP</h4>
                 <img id="distortion-map-img" src="" alt="Distortion Map" style="width: 100%; border-radius: 4px; border: 1px solid #555; display: none;" />
@@ -64,13 +72,18 @@
         <div id="canvas-container"></div>
     </div>
 
+    <!-- nguồn video high, low -->
     <video id="video-high" loop muted crossorigin="anonymous" playsinline style="display:none"></video>
     <video id="video-low" loop muted crossorigin="anonymous" playsinline style="display:none"></video>
 
+    <!-- dùng cloudflare để load thư viện threejs -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script>
+        // hàm khởi chạy hệ thống
         function startSystem() {
             const fileInput = document.getElementById('video-input');
+
+            // kiểm tra xem đã có input chưa
             if (fileInput.files.length === 0) {
                 alert("Please select an input 360° video first!");
                 return;
@@ -80,11 +93,13 @@
             const formData = new FormData();
             formData.append('video', fileInput.files[0]);
 
+            // gửi request cho backend
             fetch('/process', { method: 'POST', body: formData })
             .then(res => res.json())
             .then(data => {
                 if (data.error) throw new Error(data.error);
 
+                // lấy metric từ backend 
                 document.getElementById('m-o-size').innerText = data.metrics.original_size;
                 document.getElementById('m-o-bitrate').innerText = data.metrics.original_bitrate;
                 document.getElementById('m-h-size').innerText = data.metrics.high_size;
@@ -100,13 +115,14 @@
                 document.getElementById('m-h-latency').innerText = data.metrics.high_latency;
                 document.getElementById('m-l-latency').innerText = data.metrics.low_latency;
 
-                // Load Distortion Map Image
+                // Load Distortion Map từ backend 
                 if (data.distortion_map_url) {
                     const mapImg = document.getElementById('distortion-map-img');
                     mapImg.src = data.distortion_map_url + "?t=" + new Date().getTime();
                     mapImg.style.display = 'block';
                 }
 
+                // load video stream 
                 const vHigh = document.getElementById('video-high');
                 const vLow = document.getElementById('video-low');
                 const t = new Date().getTime();
@@ -118,6 +134,8 @@
 
                 vHigh.play();
                 vLow.play();
+                
+                //khởi tạo 3D scene
                 initThreeJS(); 
             })
             .catch(err => {
