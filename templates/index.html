@@ -202,7 +202,8 @@
                     // gán video vào mặt trong của quả cầu
                     const material = new THREE.MeshBasicMaterial({ map: tLow, side: THREE.BackSide });
                     const mesh = new THREE.Mesh(geometry, material);
-                    
+
+                    // định nghĩa vị trí của tile để hiển thị tile nào đang được nhìn trên dashboard 
                     mesh.userData = { id: `Row ${r + 1} - Column ${c + 1}`, tHigh: tHigh, tLow: tLow };
                     scene.add(mesh);
                     tiles.push(mesh);
@@ -247,11 +248,14 @@
         }
         function animate() { requestAnimationFrame(animate); update(); }
 
+        // hàm xác định điểm nhìn của camera 
         function update() {
+            //đảm bảo thời gian video high với low bằng nhau
             if (Math.abs(videoHigh.currentTime - videoLow.currentTime) > 0.1) {
                 videoLow.currentTime = videoHigh.currentTime;
             }
 
+            //giởi hạn biên độ vĩ độ
             lat = Math.max(-85, Math.min(85, lat)); 
             const phi = THREE.MathUtils.degToRad(90 - lat);
             const theta = THREE.MathUtils.degToRad(lon);
