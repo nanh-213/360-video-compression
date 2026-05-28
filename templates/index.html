@@ -260,16 +260,19 @@
             const phi = THREE.MathUtils.degToRad(90 - lat);
             const theta = THREE.MathUtils.degToRad(lon);
 
+            //vector hướng nhìn của camera
             cameraTarget.x = Math.sin(phi) * Math.sin(theta);
             cameraTarget.y = Math.cos(phi);
             cameraTarget.z = Math.sin(phi) * Math.cos(theta);
             camera.lookAt(cameraTarget);
 
+            // mặc định video chất lượng thấp và đường viền xám cho tất cả các mảnh (tile)
             tiles.forEach(tile => {
                 tile.material.map = tile.userData.tLow;
                 tile.userData.borderLine.material.color.setHex(0x333333); 
             });
 
+            //các điểm tính raycasting của camera (tâm và 4 góc màn hình)
             const scanPoints = [
                 new THREE.Vector2(0, 0),       
                 new THREE.Vector2(-0.6, 0.6),   
@@ -277,22 +280,25 @@
                 new THREE.Vector2(-0.6, -0.6),  
                 new THREE.Vector2(0.6, -0.6)    
             ];
-            let activeTileNames = [];
+            let activeTileNames = []; //mảng chứa các tile đang được nhìn
 
+            // đổi các mảnh giao với raycasting thành chất lượng cao và viền xanh
             scanPoints.forEach(point => {
                 raycaster.setFromCamera(point, camera);
-                const intersects = raycaster.intersectObjects(tiles);
+                const intersects = raycaster.intersectObjects(tiles); //raycaster giao với các mảnh này
                 if (intersects.length > 0) {
                     const touchedTile = intersects[0].object;
-                    touchedTile.material.map = touchedTile.userData.tHigh;
-                    touchedTile.userData.borderLine.material.color.setHex(0x00ff88); 
+                    touchedTile.material.map = touchedTile.userData.tHigh; //gắn video chất lượng cao 
+                    touchedTile.userData.borderLine.material.color.setHex(0x00ff88);  //đổi viền thành màu xanh
                     if (!activeTileNames.includes(touchedTile.userData.id)) {
-                        activeTileNames.push(touchedTile.userData.id);
+                        activeTileNames.push(touchedTile.userData.id); //tránh lặp tên mảnh nếu quét trùng
                     }
                 }
             });
 
+            //hiển thị các mảnh đang được nhìn 
             document.getElementById('active-tile').innerText = activeTileNames.length > 0 ? activeTileNames.join(', ') : '-';
+            //render toàn bộ scene 3D
             renderer.render(scene, camera);
         }
     </script>
