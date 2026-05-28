@@ -77,7 +77,7 @@ Upload any 360° panorama video (`.mp4` format) through the UI and click the sta
 ## Test Input Videos
 
 Google Drive link:
-https://drive.google.com/drive/folders/1q2JklARE5gdvMztrQ34OypWd3OIhf56M?
+https://drive.google.com/drive/folders/1q2JklARE5gdvMztrQ34OypWd3OIhf56M
 
 Includes:
 - Original 360° videos
