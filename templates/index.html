@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <title>Viewport Adaptive 360° System</title>
@@ -24,40 +24,40 @@
 
     <div id="upload-lobby">
         <div class="box">
-            <h2>HỆ THỐNG TRUYỀN TẢI THÍCH NGHI VIDEO 360°</h2>
-            <p>Xử lý nén dựa trên bản đồ độ méo hình học (Distortion Map)</p>
+            <h2>360° VIDEO STREAMING SYSTEM</h2>
+            <p>Compression processing based on the distortion map</p>
             <input type="file" id="video-input" accept="video/mp4" /><br>
-            <button onclick="startSystem()">KHỞI CHẠY HỆ THỐNG LIVE DEMO</button>
-            <div id="loading">⚡ Đang phân tích Distortion Map & Thực hiện nén song song... Vui lòng đợi!</div>
+            <button onclick="startSystem()">START LIVE DEMO SYSTEM</button>
+            <div id="loading">Loading...</div>
         </div>
     </div>
 
     <div id="app-container">
         <div id="dashboard">
-            <h3>📊 THÔNG SỐ ĐO ĐẠC HỆ THỐNG</h3>
-            <div>Mảnh đang ở Viewport (HIGH): <span id="active-tile" style="color:#00ff88; font-weight:bold;">-</span></div>
+            <h3>📊 SYSTEM METRICS</h3>
+            <div>Tiles currently in Viewport (HIGH): <span id="active-tile" style="color:#00ff88; font-weight:bold;">-</span></div>
             <hr style="border: 0.5px solid #444; margin: 10px 0;">
             <table>
                 <thead>
                     <tr>
-                        <th>Tiêu chí</th>
-                        <th>Bản HIGH (-0.5)</th>
-                        <th>Bản LOW (-0.1)</th>
+                        <th>Metric</th>
+                        <th>HIGH Version</th>
+                        <th>LOW Version</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <tr><td>Dung lượng</td><td id="m-h-size">-</td><td id="m-l-size">-</td></tr>
+                    <tr><td>File Size</td><td id="m-h-size">-</td><td id="m-l-size">-</td></tr>
                     <tr><td>Bitrate</td><td id="m-h-bitrate">-</td><td id="m-l-bitrate">-</td></tr>
                     <tr><td>PSNR</td><td id="m-h-psnr">-</td><td id="m-l-psnr">-</td></tr>
-                    <tr><td>Thời gian nén</td><td id="m-h-time">-</td><td id="m-l-time">-</td></tr>
-                    <tr><td>Tỷ lệ nén (CR)</td><td id="m-h-cr">-</td><td id="m-l-cr">-</td></tr>
-                    <tr><td>Độ trễ (Latency)</td><td id="m-h-latency">-</td><td id="m-l-latency">-</td></tr>
+                    <tr><td>Compression Time</td><td id="m-h-time">-</td><td id="m-l-time">-</td></tr>
+                    <tr><td>Compression Ratio (CR)</td><td id="m-h-cr">-</td><td id="m-l-cr">-</td></tr>
+                    <tr><td>Latency</td><td id="m-h-latency">-</td><td id="m-l-latency">-</td></tr>
                 </tbody>
             </table>
-            <p style="font-size:11px; color:#aaa; margin-top:10px; margin-bottom: 5px;">* Video gốc: <span id="m-o-size">-</span> (<span id="m-o-bitrate">-</span>)</p>
+            <p style="font-size:11px; color:#aaa; margin-top:10px; margin-bottom: 5px;">* Original Video: <span id="m-o-size">-</span> (<span id="m-o-bitrate">-</span>)</p>
             
             <div style="margin-top: 15px; border-top: 1px solid #444; padding-top: 15px; text-align: center;">
-                <h4 style="margin: 0 0 10px 0; color: #00ff88; font-size: 13px;">🗺️ BẢN ĐỒ ĐỘ MÉO (HEATMAP)</h4>
+                <h4 style="margin: 0 0 10px 0; color: #00ff88; font-size: 13px;">DISTORTION MAP</h4>
                 <img id="distortion-map-img" src="" alt="Distortion Map" style="width: 100%; border-radius: 4px; border: 1px solid #555; display: none;" />
             </div>
         </div>
@@ -72,7 +72,7 @@
         function startSystem() {
             const fileInput = document.getElementById('video-input');
             if (fileInput.files.length === 0) {
-                alert("Bạn ơi, hãy chọn một video 360° đầu vào đã nhé!");
+                alert("Please select an input 360° video first!");
                 return;
             }
 
@@ -121,7 +121,7 @@
                 initThreeJS(); 
             })
             .catch(err => {
-                alert("Gặp lỗi xử lý: " + err.message);
+                alert("Processing error: " + err.message);
                 document.getElementById('loading').style.display = 'none';
             });
         }
@@ -174,7 +174,7 @@
                     const material = new THREE.MeshBasicMaterial({ map: tLow, side: THREE.BackSide });
                     const mesh = new THREE.Mesh(geometry, material);
                     
-                    mesh.userData = { id: `Hàng ${r + 1} - Cột ${c + 1}`, tHigh: tHigh, tLow: tLow };
+                    mesh.userData = { id: `Row ${r + 1} - Column ${c + 1}`, tHigh: tHigh, tLow: tLow };
                     scene.add(mesh);
                     tiles.push(mesh);
 
