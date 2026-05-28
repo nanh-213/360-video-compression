@@ -44,7 +44,7 @@ pip install flask matplotlib numpy
 
 ---
 
-## 🚀 How to Run the Code
+## How to Run the Code
 
 1. **Clone the repository** to your local machine:
 ```bash
