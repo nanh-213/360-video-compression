@@ -135,41 +135,48 @@
                 vHigh.play();
                 vLow.play();
                 
-                //khởi tạo 3D scene
                 initThreeJS(); 
             })
+            
+            // hiển thị thông báo nếu lỗi
             .catch(err => {
                 alert("Processing error: " + err.message);
                 document.getElementById('loading').style.display = 'none';
             });
         }
 
+        // khởi tạo đồ họa threejs
         let container, scene, camera, renderer, videoHigh, videoLow;
-        let tiles = []; 
+        let tiles = []; //nơi lưu 16 mảnh quả cầu 
         const rows = 4, cols = 4, sphereRadius = 500;
         let isUserInteracting = false, lon = 0, lat = 0;
-        let onPointerDownLon = 0, onPointerDownLat = 0, onPointerDownPointerX = 0, onPointerDownPointerY = 0;
+        let onPointerDownLon = 0, onPointerDownLat = 0, onPointerDownPointerX = 0, onPointerDownPointerY = 0; //tương tác chuột 
         const cameraTarget = new THREE.Vector3(), raycaster = new THREE.Raycaster();
 
+        // tạo môi trường 3D cho viewport
         function initThreeJS() {
             container = document.getElementById('canvas-container');
             videoHigh = document.getElementById('video-high');
             videoLow = document.getElementById('video-low');
 
+            // tạo scene, đặt camera tại gốc tọa độ (tâm quả cầu)
             scene = new THREE.Scene();
             camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 1100);
             camera.position.set(0, 0, 0);
 
+            //cấu hình WebGL renderer 
             renderer = new THREE.WebGLRenderer({ antialias: true });
             renderer.setPixelRatio(window.devicePixelRatio);
             renderer.setSize(window.innerWidth, window.innerHeight);
             container.appendChild(renderer.domElement);
 
+            //chuyển dữ liệu video thành texture để gán lên quả cầu
             const texHighBase = new THREE.VideoTexture(videoHigh);
             const texLowBase = new THREE.VideoTexture(videoLow);
             texHighBase.minFilter = THREE.LinearFilter;
             texLowBase.minFilter = THREE.LinearFilter;
 
+            // chia quả cầu thành 16 mảnh (lưới 4x4) theo góc phi và theta
             for (let r = 0; r < rows; r++) {
                 for (let c = 0; c < cols; c++) {
                     const phiStart = (c / cols) * Math.PI * 2;
@@ -177,18 +184,22 @@
                     const thetaStart = (r / rows) * Math.PI;
                     const thetaLength = (1 / rows) * Math.PI;
 
+                    // tạo khối cho từng mảnh trên quả cầu 
                     const geometry = new THREE.SphereGeometry(sphereRadius, 32, 32, phiStart, phiLength, thetaStart, thetaLength);
                     const tHigh = texHighBase.clone();
                     const tLow = texLowBase.clone();
 
+                    // thu nhỏ vùng texture được sử dụng (mỗi mảnh chỉ dùng 1/16 video)
                     tHigh.repeat.set(1 / cols, 1 / rows);
                     tLow.repeat.set(1 / cols, 1 / rows);
 
-                    const uOffset = c / cols;
-                    const vOffset = (rows - 1 - r) / rows; 
+                    // chọn phần video được gán tương ứng với mỗi mảnh
+                    const uOffset = c / cols; //uOffset: vị trí trục ngang
+                    const vOffset = (rows - 1 - r) / rows; //vOffset: vị trí trục dọc
                     tHigh.offset.set(uOffset, vOffset);
                     tLow.offset.set(uOffset, vOffset);
 
+                    // gán video vào mặt trong của quả cầu
                     const material = new THREE.MeshBasicMaterial({ map: tLow, side: THREE.BackSide });
                     const mesh = new THREE.Mesh(geometry, material);
                     
@@ -196,6 +207,7 @@
                     scene.add(mesh);
                     tiles.push(mesh);
 
+                    //vẽ đường viền phân tách các mảnh
                     const edges = new THREE.EdgesGeometry(geometry, 30);
                     const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0x333333, linewidth: 2 }));
                     scene.add(line);
@@ -203,6 +215,7 @@
                 }
             }
 
+            // nhận tương tác chuột
             document.addEventListener('pointerdown', onPointerDown);
             document.addEventListener('pointermove', onPointerMove);
             document.addEventListener('pointerup', onPointerUp);
@@ -210,6 +223,7 @@
             animate();
         }
 
+        //di chuyển camera dựa trên hành động của chuột
         function onPointerDown(event) {
             if (event.target.tagName === 'INPUT') return; 
             isUserInteracting = true;
