@@ -250,6 +250,9 @@
 
         // hàm xác định điểm nhìn của camera 
         function update() {
+            //tránh render khi video chưa decode xong
+            if (videoHigh.readyState < 2 || videoLow.readyState < 2) return;
+
             //đảm bảo thời gian video high với low bằng nhau
             if (Math.abs(videoHigh.currentTime - videoLow.currentTime) > 0.1) {
                 videoLow.currentTime = videoHigh.currentTime;
@@ -266,10 +269,13 @@
             cameraTarget.z = Math.sin(phi) * Math.cos(theta);
             camera.lookAt(cameraTarget);
 
-            // mặc định video chất lượng thấp và đường viền xám cho tất cả các mảnh (tile)
+            // đổi video chất lượng thấp và đường viền xám cho các mảnh (tile)
             tiles.forEach(tile => {
-                tile.material.map = tile.userData.tLow;
-                tile.userData.borderLine.material.color.setHex(0x333333); 
+                if (tile.material.map !== tile.userData.tLow) {
+                    tile.material.map = tile.userData.tLow;
+                    tile.material.needsUpdate = true;
+                }
+                tile.userData.borderLine.material.color.setHex(0x333333);
             });
 
             //các điểm tính raycasting của camera (tâm và 4 góc màn hình)
@@ -289,6 +295,7 @@
                 if (intersects.length > 0) {
                     const touchedTile = intersects[0].object;
                     touchedTile.material.map = touchedTile.userData.tHigh; //gắn video chất lượng cao 
+                    touchedTile.material.needsUpdate = true; //cập nhật khi material thay đổi
                     touchedTile.userData.borderLine.material.color.setHex(0x00ff88);  //đổi viền thành màu xanh
                     if (!activeTileNames.includes(touchedTile.userData.id)) {
                         activeTileNames.push(touchedTile.userData.id); //tránh lặp tên mảnh nếu quét trùng
