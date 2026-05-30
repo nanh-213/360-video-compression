@@ -136,12 +136,12 @@ def process_video():
     # Nén theo distortion map & Giải nén
     # nén video chất lượng cao (crf thấp -> chất lượng cao)
     t0 = time.time()
-    subprocess.run(f'ffmpeg -y -i "{input_path}" -vf "{DISTORTION_FILTER_HIGH}" -c:v libx265 -preset ultrafast -crf 20 -tune psnr -x265-params "log-level=error" "{high_encoded}"', shell=True, check=True)
+    subprocess.run(f'ffmpeg -y -i "{input_path}" -vf "{DISTORTION_FILTER_HIGH}" -c:v libx265 -preset ultrafast -crf 20 -tune psnr -x265-params "log-level=error:aq-mode=1" "{high_encoded}"', shell=True, check=True)
     encode_time_high = time.time() - t0
 
     # nén video chất lượng thấp
     t0 = time.time()
-    subprocess.run(f'ffmpeg -y -i "{input_path}" -vf "{DISTORTION_FILTER_LOW}" -c:v libx265 -preset ultrafast -crf 32 -tune psnr -x265-params "log-level=error" "{low_encoded}"', shell=True, check=True)
+    subprocess.run(f'ffmpeg -y -i "{input_path}" -vf "{DISTORTION_FILTER_LOW}" -c:v libx265 -preset ultrafast -crf 32 -tune psnr -x265-params "log-level=error:aq-mode=1" "{low_encoded}"', shell=True, check=True)    
     encode_time_low = time.time() - t0
 
     # giải nén để tính psnr
